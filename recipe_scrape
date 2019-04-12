@@ -1,0 +1,109 @@
+from bs4 import BeautifulSoup
+import requests
+import csv
+
+csv_file = open('taste7.csv', 'w')
+
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(['category', 'recipe', 'time', 'ingredients', 'method'])
+
+#Loop grabbing all the collection urls
+number = 47
+while number <= 56:
+    number += 1
+    try:
+        source = requests.get(f'https://www.taste.com.au/recipes/collections?page={number}&sort=recent').text
+    except:
+        break
+
+    soup = BeautifulSoup(source, 'lxml')
+
+    for collection5 in soup.find_all('article'):
+        print()
+        collection4 = collection5.h3.a
+        collection3 = str(collection4)
+        collection2 = collection3.split('"')
+        collection1 = collection2[1]
+        collection = f'https://www.taste.com.au{collection1}'
+        #which category the recipes are in
+        category = collection[45:]
+        print(collection)
+        print(category)
+        print()
+        print()
+
+        #loop grabbing all the recipe urls within each collection
+        if (category != 'celebrations' and category != 'low-carb' and category != 'cooking-for-1-or-2' and category != 'nutrition-information'):
+            num = 0
+            while True:
+                num += 1
+                try:
+                    print(collection1)
+                    print('  Loading page %s' % num)
+                    print()
+                    resp = requests.get(f'https://www.taste.com.au{collection1}?page={num}&q=&sort=recent')
+                    resp.raise_for_status()
+                    source1 = resp.text
+                except:
+                    break
+
+                soup1 = BeautifulSoup(source1, 'lxml')
+                print()
+                #grabbing the url for each recipe in the collection pages
+                for recipe in soup1.find_all('article'):
+                    # print(recipe1.prettify())
+
+                    url5 = str(recipe.h3.a)
+                    # print(url5)
+
+                    url4 = url5.split('"/')
+
+                    # print(url4)
+
+                    url3 = url4[1].split('?r')
+
+                    # print(url3)
+
+                    url2 = url3[0]
+
+                    # print(url2)
+
+                    url = f'https://www.taste.com.au/{url2}'
+
+                    print(url)
+                    
+                    #getting the recipe details for every recipe
+                    n=0
+                    while True:
+                        source = requests.get(f'https://www.taste.com.au/{url2}').text
+
+                        soup = BeautifulSoup(source, 'lxml')
+
+
+                        #grabbing the recipe name
+                        recipe_header = soup.find('div', class_="col-xs-12")
+                        recipe = recipe_header.h1.text
+                        print(recipe)
+
+                        #grabbing the cook time and recipe difficulty
+                        time_cook = soup.find('div', class_='cooking-info-lead-image-container')
+                        time = time_cook.ul.text
+                        print(time)
+
+                        #grabbing ingredients from the recipe
+                        food = soup.find('section', class_='recipe-ingredients-section')
+                        ingredients = food.ul.text
+                        print(ingredients)
+
+                        #Cleaning up the recipe method to remove white space
+                        how = soup.find('section', class_='recipe-method-section')
+                        method2 = how.ul.text
+                        method1 = method2.split()
+                        method = ' '.join(method1)
+                        print(method)
+                        break
+
+                    csv_writer.writerow([category, recipe, time, ingredients, method])
+        
+
+csv_file.close()
